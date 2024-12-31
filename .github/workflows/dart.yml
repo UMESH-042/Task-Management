@@ -13,24 +13,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache Flutter dependencies
-        uses: actions/cache@v3
+      - name: Setup Java
+        uses: actions/setup-java@v3
         with:
-          path: |
-            ~/.pub-cache
-            ~/.flutter
-          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-
+          distribution: 'zulu'
+          java-version: '11'
 
-      - name: Setup Flutter
+      - name: Setup Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.0'
           channel: 'stable'
 
-      - name: Install dependencies
+      - name: Cache Pub Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Download Dependencies
         run: flutter pub get
+
+      - name: Check for formatting issues
+        run: flutter format --set-exit-if-changed .
 
       - name: Analyze project source
         run: flutter analyze
