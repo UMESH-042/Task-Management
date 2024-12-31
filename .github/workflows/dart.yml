@@ -1,0 +1,63 @@
+name: Flutter Build and Release
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze project source
+        run: flutter analyze
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Generate Release Tag
+        id: tag
+        run: |
+          echo "::set-output name=release_tag::release_$(date +"%Y.%m.%d_%H-%M")"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          name: Release ${{ steps.tag.outputs.release_tag }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          body: |
+            TaskMate Release
+            
+            ## What's New
+            - Task Management with MVVM Architecture
+            - Dark/Light Theme Support
+            - Category-based Task Organization
+            - Search and Filter Functionality
+            - Responsive Design for Mobile and Tablet
+            
+            ## Installation
+            1. Download the APK
+            2. Install on your Android device
+            3. Allow installation from unknown sources if prompted
+            
+            ## Requirements
+            - Android 5.0 (API level 21) or higher
+            
+            Build completed at: ${{ steps.tag.outputs.release_tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
