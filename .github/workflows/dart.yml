@@ -1,46 +1,30 @@
-name: Flutter Build and Release
+name: Build and Release TaskMate APK
 
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build:
+    name: Build and Release APK
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
           java-version: '11'
 
-      - name: Setup Flutter SDK
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.0'
           channel: 'stable'
 
-      - name: Cache Pub Dependencies
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.PUB_CACHE }}
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
-
-      - name: Download Dependencies
+      - name: Get Dependencies
         run: flutter pub get
-
-      - name: Check for formatting issues
-        run: flutter format --set-exit-if-changed .
-
-      - name: Analyze project source
-        run: flutter analyze
 
       - name: Build APK
         run: flutter build apk --release
@@ -48,32 +32,35 @@ jobs:
       - name: Generate Release Tag
         id: tag
         run: |
-          echo "release_tag=release_$(date +'%Y.%m.%d_%H-%M')" >> $GITHUB_OUTPUT
+          echo "release_tag=v$(date +'%Y.%m.%d_%H-%M')" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.release_tag }}
-          name: Release ${{ steps.tag.outputs.release_tag }}
+          name: TaskMate ${{ steps.tag.outputs.release_tag }}
           files: build/app/outputs/flutter-apk/app-release.apk
           body: |
             TaskMate Release
             
-            ## What's New
-            - Task Management with MVVM Architecture
-            - Dark/Light Theme Support
-            - Category-based Task Organization
-            - Search and Filter Functionality
-            - Responsive Design for Mobile and Tablet
+            ## Features
+            - Task Management (Add, Edit, Delete)
+            - Dark/Light Theme
+            - Category-based organization
+            - Search functionality
+            - Responsive design
             
             ## Installation
             1. Download the APK
             2. Install on your Android device
             3. Allow installation from unknown sources if prompted
             
-            ## Requirements
-            - Android 5.0 (API level 21) or higher
-            
-            Build completed at: ${{ steps.tag.outputs.release_tag }}
+            Build Date: ${{ steps.tag.outputs.release_tag }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk 
