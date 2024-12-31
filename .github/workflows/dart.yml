@@ -13,12 +13,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.flutter
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.0'
           channel: 'stable'
-          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -32,7 +41,7 @@ jobs:
       - name: Generate Release Tag
         id: tag
         run: |
-          echo "::set-output name=release_tag::release_$(date +"%Y.%m.%d_%H-%M")"
+          echo "release_tag=release_$(date +'%Y.%m.%d_%H-%M')" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
